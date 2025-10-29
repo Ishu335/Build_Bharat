@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Decorative Indian pattern -->
+  <defs>
+    <pattern id="pattern1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="2" fill="#FF9933" opacity="0.3"/>
+      <circle cx="5" cy="15" r="1.5" fill="#138808" opacity="0.3"/>
+      <circle cx="15" cy="5" r="1.5" fill="#000080" opacity="0.3"/>
+    </pattern>
+  </defs>
+  
+  <rect width="100" height="100" fill="url(#pattern1)"/>
+  
+  <!-- Lotus petals (simplified) -->
+  <g transform="translate(50, 50)" opacity="0.4">
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#FF9933" transform="rotate(0)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#FF9933" transform="rotate(45)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#FF9933" transform="rotate(90)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#FF9933" transform="rotate(135)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#138808" transform="rotate(180)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#138808" transform="rotate(225)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#138808" transform="rotate(270)"/>
+    <ellipse cx="0" cy="-15" rx="8" ry="15" fill="#138808" transform="rotate(315)"/>
+    <circle cx="0" cy="0" r="8" fill="#FFD700"/>
+  </g>
+</svg>
+
+

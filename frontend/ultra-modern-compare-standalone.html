@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra Modern District Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --glow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) { width: 80px; height: 80px; top: 20%; left: 10%; animation-delay: 0s; }
+        .shape:nth-child(2) { width: 60px; height: 60px; top: 60%; left: 80%; animation-delay: 2s; }
+        .shape:nth-child(3) { width: 100px; height: 100px; top: 80%; left: 20%; animation-delay: 4s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .form-group i {
+            margin-right: 8px;
+            color: #4facfe;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            color: white;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
+            transform: translateY(-2px);
+        }
+
+        select option {
+            background: var(--dark);
+            color: white;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            background: var(--success);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6);
+        }
+
+        .selected-districts {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .district-chip {
+            background: var(--primary);
+            padding: 12px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            animation: slideIn 0.5s ease;
+            transition: all 0.3s ease;
+        }
+
+        .district-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .remove-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .district-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .district-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .district-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .rank-badge {
+            background: var(--warning);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #4facfe;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .chart-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 100px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            opacity: 0.6;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @media (max-width: 768px) {
+            .controls { grid-template-columns: 1fr; }
+            .charts-section { grid-template-columns: 1fr; }
+            .comparison-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 2.5rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation">
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-chart-network"></i> Ultra Modern Analytics</h1>
+            <p>Advanced District Performance Comparison Platform</p>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <label><i class="fas fa-location-dot"></i> Select Districts</label>
+                <select id="districtSelect">
+                    <option value="">Choose districts to compare...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-calendar-days"></i> Time Period</label>
+                <input type="number" id="months" min="1" max="24" value="6" placeholder="Months">
+            </div>
+            <div class="form-group">
+                <button class="btn" onclick="loadComparison()">
+                    <i class="fas fa-rocket"></i> Analyze
+                </button>
+            </div>
+            <div class="selected-districts" id="selectedDistricts"></div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <h2>Processing Analytics...</h2>
+            <p>Analyzing performance data across districts</p>
+        </div>
+
+        <div id="comparison-results" style="display: none;">
+            <div class="comparison-grid" id="comparisonGrid"></div>
+            
+            <div class="charts-section">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <div class="chart-title">Person Days Evolution</div>
+                            <p style="opacity: 0.7;">Monthly trend analysis</p>
+                        </div>
+                    </div>
+                    <canvas id="personDaysChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div>
+                            <div class="chart-title">Performance Metrics</div>
+                            <p style="opacity: 0.7;">Completion rate comparison</p>
+                        </div>
+                    </div>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-chart-mixed"></i>
+            </div>
+            <h2>Ready for Advanced Analytics</h2>
+            <p>Select multiple districts to unlock powerful comparison insights</p>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for standalone version
+        const districts = [
+            {"id": 1, "district_code": "LKO", "district_name": "Lucknow", "state_name": "Uttar Pradesh"},
+            {"id": 2, "district_code": "AGR", "district_name": "Agra", "state_name": "Uttar Pradesh"},
+            {"id": 3, "district_code": "KNP", "district_name": "Kanpur", "state_name": "Uttar Pradesh"},
+            {"id": 4, "district_code": "VNS", "district_name": "Varanasi", "state_name": "Uttar Pradesh"},
+            {"id": 5, "district_code": "MRT", "district_name": "Meerut", "state_name": "Uttar Pradesh"},
+            {"id": 6, "district_code": "ALL", "district_name": "Allahabad", "state_name": "Uttar Pradesh"},
+            {"id": 7, "district_code": "BRE", "district_name": "Bareilly", "state_name": "Uttar Pradesh"},
+            {"id": 8, "district_code": "GZB", "district_name": "Ghaziabad", "state_name": "Uttar Pradesh"},
+            {"id": 9, "district_code": "MUM", "district_name": "Mumbai", "state_name": "Maharashtra"},
+            {"id": 10, "district_code": "PUN", "district_name": "Pune", "state_name": "Maharashtra"},
+            {"id": 11, "district_code": "NAG", "district_name": "Nagpur", "state_name": "Maharashtra"},
+            {"id": 12, "district_code": "BLR", "district_name": "Bangalore", "state_name": "Karnataka"},
+            {"id": 13, "district_code": "MYS", "district_name": "Mysore", "state_name": "Karnataka"}
+        ];
+
+        let selectedDistricts = [];
+        let charts = {};
+
+        function generateMockData(districtCode, months) {
+            const data = [];
+            const baseDate = new Date();
+            baseDate.setMonth(baseDate.getMonth() - months);
+            
+            for (let i = 0; i < months; i++) {
+                const monthDate = new Date(baseDate);
+                monthDate.setMonth(monthDate.getMonth() + i);
+                
+                const personDays = Math.floor(Math.random() * 150000) + 50000;
+                const households = Math.floor(Math.random() * 20000) + 5000;
+                const worksCompleted = Math.floor(Math.random() * 400) + 100;
+                const worksTakenup = worksCompleted + Math.floor(Math.random() * 80) + 20;
+                
+                data.push({
+                    district_code: districtCode,
+                    month: monthDate.toISOString().slice(0, 7),
+                    person_days_generated: personDays,
+                    total_households_issued_jobcards: households,
+                    total_expenditure: Math.random() * 4000000 + 1000000,
+                    work_completion_rate: (worksCompleted / worksTakenup) * 100,
+                    total_works_completed: worksCompleted,
+                    total_works_takenup: worksTakenup
+                });
+            }
+            return data;
+        }
+
+        window.onload = function() {
+            loadDistricts();
+        };
+
+        function loadDistricts() {
+            const select = document.getElementById('districtSelect');
+            districts.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district.district_code;
+                option.textContent = `${district.district_name} • ${district.state_name}`;
+                select.appendChild(option);
+            });
+            
+            select.addEventListener('change', function() {
+                if (this.value && !selectedDistricts.includes(this.value)) {
+                    addDistrict(this.value);
+                    this.value = '';
+                }
+            });
+        }
+
+        function addDistrict(code) {
+            if (selectedDistricts.length >= 4) {
+                alert('Maximum 4 districts can be compared for optimal visualization');
+                return;
+            }
+            
+            selectedDistricts.push(code);
+            updateSelectedDistricts();
+            updateEmptyState();
+        }
+
+        function removeDistrict(code) {
+            selectedDistricts = selectedDistricts.filter(d => d !== code);
+            updateSelectedDistricts();
+            updateEmptyState();
+            
+            if (selectedDistricts.length < 2) {
+                document.getElementById('comparison-results').style.display = 'none';
+            }
+        }
+
+        function updateSelectedDistricts() {
+            const container = document.getElementById('selectedDistricts');
+            container.innerHTML = '';
+            
+            selectedDistricts.forEach(code => {
+                const district = districts.find(d => d.district_code === code);
+                const chip = document.createElement('div');
+                chip.className = 'district-chip';
+                chip.innerHTML = `
+                    <i class="fas fa-map-pin"></i>
+                    <span>${district.district_name}</span>
+                    <button class="remove-btn" onclick="removeDistrict('${code}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        function updateEmptyState() {
+            const emptyState = document.getElementById('emptyState');
+            emptyState.style.display = selectedDistricts.length < 2 ? 'block' : 'none';
+        }
+
+        function loadComparison() {
+            if (selectedDistricts.length < 2) {
+                alert('Please select at least 2 districts for meaningful comparison');
+                return;
+            }
+
+            const months = parseInt(document.getElementById('months').value);
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('comparison-results').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+
+            // Simulate API delay
+            setTimeout(() => {
+                const data = {};
+                selectedDistricts.forEach(code => {
+                    data[code] = generateMockData(code, months);
+                });
+                
+                renderComparison(data);
+                document.getElementById('loading').style.display = 'none';
+            }, 1500);
+        }
+
+        function renderComparison(data) {
+            renderDistrictCards(data);
+            renderCharts(data);
+            document.getElementById('comparison-results').style.display = 'block';
+        }
+
+        function renderDistrictCards(data) {
+            const container = document.getElementById('comparisonGrid');
+            container.innerHTML = '';
+
+            const rankings = selectedDistricts.map(code => {
+                const districtData = data[code];
+                const latest = districtData[districtData.length - 1];
+                return {
+                    code,
+                    score: latest.person_days_generated + (latest.work_completion_rate * 1000)
+                };
+            }).sort((a, b) => b.score - a.score);
+
+            selectedDistricts.forEach(code => {
+                const district = districts.find(d => d.district_code === code);
+                const districtData = data[code];
+                const latest = districtData[districtData.length - 1];
+                const rank = rankings.findIndex(r => r.code === code) + 1;
+
+                const card = document.createElement('div');
+                card.className = 'district-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-building"></i> ${district.district_name}
+                        </div>
+                        <div class="rank-badge">
+                            <i class="fas fa-trophy"></i> #${rank}
+                        </div>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-value">${(latest.person_days_generated / 1000).toFixed(0)}K</div>
+                            <div class="metric-label">Person Days</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${latest.work_completion_rate.toFixed(1)}%</div>
+                            <div class="metric-label">Completion Rate</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${(latest.total_households_issued_jobcards / 1000).toFixed(0)}K</div>
+                            <div class="metric-label">Households</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">₹${(latest.total_expenditure / 1000000).toFixed(1)}M</div>
+                            <div class="metric-label">Expenditure</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderCharts(data) {
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            const colors = ['#4facfe', '#f093fb', '#43e97b', '#ffa726'];
+            const months = data[selectedDistricts[0]].map(d => d.month);
+
+            charts.personDays = new Chart(document.getElementById('personDaysChart'), {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: selectedDistricts.map((code, index) => {
+                        const district = districts.find(d => d.district_code === code);
+                        return {
+                            label: district.district_name,
+                            data: data[code].map(d => d.person_days_generated),
+                            borderColor: colors[index],
+                            backgroundColor: colors[index] + '20',
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: 'white', font: { size: 14 } }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+
+            charts.performance = new Chart(document.getElementById('performanceChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Person Days', 'Completion Rate', 'Households', 'Expenditure'],
+                    datasets: selectedDistricts.map((code, index) => {
+                        const district = districts.find(d => d.district_code === code);
+                        const latest = data[code][data[code].length - 1];
+                        return {
+                            label: district.district_name,
+                            data: [
+                                latest.person_days_generated / 2000,
+                                latest.work_completion_rate,
+                                latest.total_households_issued_jobcards / 250,
+                                latest.total_expenditure / 50000
+                            ],
+                            borderColor: colors[index],
+                            backgroundColor: colors[index] + '30',
+                            borderWidth: 3,
+                            pointRadius: 5
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: { color: 'white', font: { size: 14 } }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            ticks: { color: 'white', backdropColor: 'transparent' },
+                            grid: { color: 'rgba(255,255,255,0.2)' },
+                            angleLines: { color: 'rgba(255,255,255,0.2)' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-placeholder:hover .placeholder-image {
+  transform: scale(1.1);
+}
+
+/* Floating animation for decorative images */
+.float-animation .placeholder-image {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* Pulse effect for important images */
+.pulse-animation .placeholder-image {
+  animation: imagePulse 2s ease-in-out infinite;
+}
+
+@keyframes imagePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+

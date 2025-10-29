@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>District Comparison Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; text-align: center; margin-bottom: 30px; border-radius: 8px; }
+        .controls { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select, input, button { padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; }
+        button { background: #3498db; color: white; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        .selected-districts { display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0; }
+        .district-chip { background: #3498db; color: white; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+        .remove-btn { background: none; border: none; color: white; cursor: pointer; padding: 0; width: auto; }
+        .comparison-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .comparison-table th, .comparison-table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .comparison-table th { background: #34495e; color: white; }
+        .max-value { background: #e8f5e8; font-weight: bold; }
+        .loading { text-align: center; padding: 40px; }
+        .empty-state { text-align: center; padding: 60px; color: #666; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        @media (max-width: 768px) { 
+            .charts-grid { grid-template-columns: 1fr; }
+            .selected-districts { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>District Comparison Dashboard</h1>
+            <p>Compare MGNREGA performance across districts</p>
+        </div>
+
+        <div class="controls">
+            <div class="form-group">
+                <label for="districtSelect">Select Districts to Compare:</label>
+                <select id="districtSelect">
+                    <option value="">-- Select a district --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="months">Comparison Period (months):</label>
+                <input type="number" id="months" min="1" max="24" value="6">
+            </div>
+            <div class="selected-districts" id="selectedDistricts"></div>
+            <button onclick="loadComparison()">Compare Districts</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">Loading comparison data...</div>
+        
+        <div id="comparisonResults" style="display: none;">
+            <table class="comparison-table" id="comparisonTable">
+                <thead>
+                    <tr id="tableHeader"></tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>Person Days Generated</h3>
+                    <canvas id="personDaysChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Work Completion Rate (%)</h3>
+                    <canvas id="completionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+            <h3>Select at least 2 districts to compare</h3>
+            <p>Choose districts from the dropdown above</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let selectedDistricts = [];
+        let districts = [];
+        let charts = {};
+
+        // Load districts on page load
+        window.onload = async function() {
+            await loadDistricts();
+        };
+
+        async function loadDistricts() {
+            try {
+                const response = await fetch(`${API_BASE}/districts`);
+                districts = await response.json();
+                
+                const select = document.getElementById('districtSelect');
+                districts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district.district_code;
+                    option.textContent = district.district_name;
+                    select.appendChild(option);
+                });
+                
+                select.addEventListener('change', function() {
+                    if (this.value && !selectedDistricts.includes(this.value)) {
+                        addDistrict(this.value);
+                        this.value = '';
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading districts:', error);
+            }
+        }
+
+        function addDistrict(code) {
+            if (selectedDistricts.length >= 4) {
+                alert('Maximum 4 districts can be compared');
+                return;
+            }
+            
+            selectedDistricts.push(code);
+            updateSelectedDistricts();
+            updateEmptyState();
+        }
+
+        function removeDistrict(code) {
+            selectedDistricts = selectedDistricts.filter(d => d !== code);
+            updateSelectedDistricts();
+            updateEmptyState();
+            
+            if (selectedDistricts.length < 2) {
+                document.getElementById('comparisonResults').style.display = 'none';
+            }
+        }
+
+        function updateSelectedDistricts() {
+            const container = document.getElementById('selectedDistricts');
+            container.innerHTML = '';
+            
+            selectedDistricts.forEach(code => {
+                const district = districts.find(d => d.district_code === code);
+                const chip = document.createElement('div');
+                chip.className = 'district-chip';
+                chip.innerHTML = `
+                    <span>${district.district_name}</span>
+                    <button class="remove-btn" onclick="removeDistrict('${code}')">×</button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        function updateEmptyState() {
+            const emptyState = document.getElementById('emptyState');
+            emptyState.style.display = selectedDistricts.length < 2 ? 'block' : 'none';
+        }
+
+        async function loadComparison() {
+            if (selectedDistricts.length < 2) {
+                alert('Please select at least 2 districts');
+                return;
+            }
+
+            const months = document.getElementById('months').value;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('comparisonResults').style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/compare?district_codes=${selectedDistricts.join(',')}&months=${months}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderComparison(data);
+                } else {
+                    alert(data.detail || 'Error loading comparison data');
+                }
+            } catch (error) {
+                alert('Error connecting to API: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderComparison(data) {
+            renderTable(data);
+            renderCharts(data);
+            document.getElementById('comparisonResults').style.display = 'block';
+        }
+
+        function renderTable(data) {
+            const header = document.getElementById('tableHeader');
+            const body = document.getElementById('tableBody');
+            
+            // Clear existing content
+            header.innerHTML = '';
+            body.innerHTML = '';
+            
+            // Create header
+            const metricHeader = document.createElement('th');
+            metricHeader.textContent = 'Metric';
+            header.appendChild(metricHeader);
+            
+            selectedDistricts.forEach(code => {
+                const district = districts.find(d => d.district_code === code);
+                const th = document.createElement('th');
+                th.textContent = district.district_name;
+                header.appendChild(th);
+            });
+            
+            // Metrics to compare
+            const metrics = [
+                { key: 'person_days_generated', label: 'Person Days', format: (val) => val.toLocaleString() },
+                { key: 'total_households_issued_jobcards', label: 'Households', format: (val) => val.toLocaleString() },
+                { key: 'total_expenditure', label: 'Expenditure (₹)', format: (val) => '₹' + val.toLocaleString() },
+                { key: 'work_completion_rate', label: 'Completion Rate (%)', format: (val) => val.toFixed(1) + '%' },
+                { key: 'total_works_completed', label: 'Works Completed', format: (val) => val.toLocaleString() }
+            ];
+            
+            metrics.forEach(metric => {
+                const row = document.createElement('tr');
+                
+                // Metric name
+                const metricCell = document.createElement('td');
+                metricCell.textContent = metric.label;
+                metricCell.style.fontWeight = 'bold';
+                row.appendChild(metricCell);
+                
+                // Get values for comparison
+                const values = selectedDistricts.map(code => {
+                    const districtData = data[code];
+                    return districtData && districtData.length > 0 ? districtData[0][metric.key] : 0;
+                });
+                const maxValue = Math.max(...values);
+                
+                // District values
+                selectedDistricts.forEach((code, index) => {
+                    const cell = document.createElement('td');
+                    const value = values[index];
+                    cell.textContent = metric.format(value);
+                    
+                    if (value === maxValue && maxValue > 0) {
+                        cell.className = 'max-value';
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                body.appendChild(row);
+            });
+        }
+
+        function renderCharts(data) {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            const colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12'];
+            const months = data[selectedDistricts[0]].map(d => d.month);
+
+            // Person Days Chart
+            const personDaysData = {
+                labels: months,
+                datasets: selectedDistricts.map((code, index) => {
+                    const district = districts.find(d => d.district_code === code);
+                    return {
+                        label: district.district_name,
+                        data: data[code].map(d => d.person_days_generated),
+                        borderColor: colors[index],
+                        backgroundColor: colors[index] + '20',
+                        fill: false
+                    };
+                })
+            };
+
+            charts.personDays = new Chart(document.getElementById('personDaysChart'), {
+                type: 'line',
+                data: personDaysData,
+                options: { 
+                    responsive: true, 
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+
+            // Completion Rate Chart
+            const completionData = {
+                labels: months,
+                datasets: selectedDistricts.map((code, index) => {
+                    const district = districts.find(d => d.district_code === code);
+                    return {
+                        label: district.district_name,
+                        data: data[code].map(d => d.work_completion_rate),
+                        borderColor: colors[index],
+                        backgroundColor: colors[index] + '20',
+                        fill: false
+                    };
+                })
+            };
+
+            charts.completion = new Chart(document.getElementById('completionChart'), {
+                type: 'line',
+                data: completionData,
+                options: { 
+                    responsive: true, 
+                    scales: { y: { beginAtZero: true, max: 100 } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

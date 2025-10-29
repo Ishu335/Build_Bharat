@@ -289,7 +289,7 @@ function DistrictDetailPage() {
             
             <div className="inclusion-bar">
               <div className="inclusion-label">
-                <span className="hindi-text">अनुसूचित जाति</span> SC
+                <span className="hindi-text">अनुसूचित जाति</span> 
               </div>
               <div className="progress-bar">
                 <div 

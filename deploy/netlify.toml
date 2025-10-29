@@ -1,0 +1,7 @@
+[build]
+  publish = "frontend"
+  
+[[redirects]]
+  from = "/*"
+  to = "/ultra-modern-compare.html"
+  status = 200
