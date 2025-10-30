@@ -26,3 +26,7 @@ function ImagePlaceholder({ type = 'rural', alt = 'MGNREGA', className = '' }) {
 export default ImagePlaceholder
 
 
+
+
+
+
